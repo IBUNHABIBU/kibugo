@@ -1,0 +1,139 @@
+<%# app/views/spare_requests/index.html.erb %>
+<% content_for :title, "All Spare Requests" %>
+
+<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+  <!-- Page header -->
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">All Spare Requests</h1>
+      <p class="mt-1 text-sm text-slate-500">Activity repairs, workshop requirements and stock replenishment.</p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <%= link_to spare_requests_path(format: :xlsx),
+          class: "inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50" do %>
+        <svg class="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+        </svg>
+        Export Excel
+      <% end %>
+
+      <%= link_to new_spare_request_path,
+          class: "inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" do %>
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+        New Spare Request
+      <% end %>
+    </div>
+  </div>
+
+<%= turbo_frame_tag "spare_requests_content" do %>
+  <%# ============================================================
+      KPI CARDS (zitabadilika pamoja na filter)
+      ============================================================ %>
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <!-- Total -->
+    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Total requests</p>
+        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z" />
+          </svg>
+        </div>
+      </div>
+      <p class="mt-3 text-2xl font-semibold tabular-nums text-slate-900"><%= @total_requests %></p>
+      <p class="mt-1 text-xs text-slate-400">All time</p>
+    </div>
+
+    <!-- Activity -->
+    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Activity</p>
+        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 1 1-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 0 0 4.486-6.336l-3.276 3.277a3.004 3.004 0 0 1-2.25-2.25l3.276-3.276a4.5 4.5 0 0 0-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437 1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008Z" />
+          </svg>
+        </div>
+      </div>
+      <p class="mt-3 text-2xl font-semibold tabular-nums text-slate-900"><%= @activity_count %></p>
+      <p class="mt-1 text-xs text-slate-400">Repair linked</p>
+    </div>
+
+    <!-- Workshop -->
+    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Workshop</p>
+        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 1 1-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 0 0 4.486-6.336l-3.276 3.277a3.004 3.004 0 0 1-2.25-2.25l3.276-3.276a4.5 4.5 0 0 0-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437 1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008Z" />
+          </svg>
+        </div>
+      </div>
+      <p class="mt-3 text-2xl font-semibold tabular-nums text-slate-900"><%= @workshop_count %></p>
+      <p class="mt-1 text-xs text-slate-400">General usage</p>
+    </div>
+
+    <!-- Stock -->
+    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Stock Replenish</p>
+        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+          </svg>
+        </div>
+      </div>
+      <p class="mt-3 text-2xl font-semibold tabular-nums text-slate-900"><%= @stock_count %></p>
+      <p class="mt-1 text-xs text-slate-400">For inventory</p>
+    </div>
+  </div>
+
+
+
+<% active_status = params[:status].to_s %>
+
+<div class="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+  <div class="hidden md:flex flex-wrap items-center gap-2">
+    <span class="text-sm font-medium text-slate-500 mr-2">Filter by status:</span>
+
+    <%= link_to "All", spare_requests_path,
+        data: { turbo_frame: "spare_requests_content", turbo_action: "advance" },
+        class: "rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all duration-200 #{active_status.blank? ? 'bg-blue-600 border-blue-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-600 hover:bg-blue-50'}" %>
+
+    <% SpareRequest.statuses.keys.each do |status| %>
+      <%= link_to status.humanize, spare_requests_path(status: status),
+          data: { turbo_frame: "spare_requests_content", turbo_action: "advance" },
+          class: "rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all duration-200 #{active_status == status ? 'bg-blue-600 border-blue-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-600 hover:bg-blue-50'}" %>
+    <% end %>
+  </div>
+
+  <div class="md:hidden">
+    <%= form_with url: spare_requests_path, method: :get,
+        data: { turbo_frame: "spare_requests_content", turbo_action: "advance" },
+        class: "flex items-center gap-2" do |f| %>
+      <label class="text-sm font-medium text-slate-500 shrink-0">Status:</label>
+      <%= f.select :status,
+          options_for_select(
+            [["All statuses", ""]] + SpareRequest.statuses.keys.map { |s| [s.humanize, s] },
+            active_status
+          ),
+          {},
+          onchange: "this.form.requestSubmit()",
+          class: "flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm focus:border-blue-500 focus:ring-blue-500/20 cursor-pointer" %>
+    <% end %>
+  </div>
+</div>
+
+
+
+  <%# ============================================================
+      LIST (Turbo Frame)
+      ============================================================ %>
+  <%= turbo_frame_tag "spare_requests_list" do %>
+    <%= render "spare_requests/list", spare_requests: @spare_requests %>
+  <% end %>
+<% end %>
+</div>

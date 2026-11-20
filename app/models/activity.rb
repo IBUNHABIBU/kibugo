@@ -1,0 +1,385 @@
+# app/models/activity.rb
+class Activity < ApplicationRecord
+  belongs_to :user
+  belongs_to :customer, optional: true
+  belongs_to :tv_brand, optional: true
+  belongs_to :tv_size, optional: true
+  belongs_to :tatizo, optional: true
+
+  has_many :activity_spares, dependent: :destroy
+  has_many :spares, through: :activity_spares
+  has_many :repair_returns, dependent: :destroy
+  has_many :spare_requests, dependent: :destroy
+
+  has_one_attached :pattern_image
+  has_one_attached :model_image
+  has_one_attached :board_image
+  has_one_attached :tcon_image
+  has_one_attached :cof_image
+  has_one_attached :panel_image
+  has_one_attached :image_before
+  has_one_attached :image_after
+  has_one_attached :kabla
+  has_one_attached :baada
+
+  validates :customer, presence: { message: "Tafadhali chagua jina mteja" }
+  validates :tv_brand, presence: { message: "Tafadhali chagua aina ya TV" }
+  validates :tv_size, presence: { message: "Tafadhali chagua ukubwa wa TV" }
+  validates :tatizo, presence: { message: "Tafadhali jaza tatizo la tv" }
+  validates :number_of_cof, presence: { message: "Tafadhali jaza idadi ya cof" }
+  validates :number_of_side_cof, presence: { message: "Tafadhali jaza idadi ya side cof" }
+
+ 
+
+  has_paper_trail
+
+  enum :status, {
+    received: 0,
+    in_repair: 1,
+    completed: 2,
+    delivered: 3,
+    returned: 4,
+    irreparable: 5,
+    cancelled: 6,
+    spare_requested: 7
+  }
+
+  
+  before_validation :calculate_gross_profit
+  before_save :set_timestamps, if: :status_changed?
+
+  validates :price, :labour_charge, numericality: { greater_than_or_equal_to: 0 }
+  validates :irreparable_reason, presence: true, if: :irreparable?
+
+  scope :sales, -> { where(status: %i[completed delivered returned]) }
+  scope :with_balance, -> { where("starting_price > price AND price >= 0") }
+  scope :owed, -> {
+    where("starting_price > price AND price >= 0 AND status NOT IN (?)",
+          [statuses[:cancelled], statuses[:irreparable]])
+  }
+
+  scope :search, ->(q) {
+    next all if q.blank?
+
+    q_str = q.to_s.strip
+    pattern = "%#{sanitize_sql_like(q_str)}%"
+
+    status_values = statuses.keys
+      .select { |s| s.include?(q_str.downcase) }
+      .map    { |s| statuses[s] }
+
+    conditions = [
+      "customers.name ILIKE :q",
+      "customers.phone ILIKE :q",
+      "tv_brands.name ILIKE :q",
+      "CAST(tv_sizes.size AS TEXT) LIKE :q",
+      "tatizos.name ILIKE :q",
+      "activities.model_no ILIKE :q",
+      "activities.board_number ILIKE :q",
+      "activities.tcon_number ILIKE :q",
+      "activities.cof_number ILIKE :q",
+      "activities.panel_number ILIKE :q"
+    ]
+
+    bindings = { q: pattern }
+
+    if status_values.any?
+      conditions << "activities.status IN (:status_values)"
+      bindings[:status_values] = status_values
+    end
+
+    left_joins(:customer, :tv_brand, :tv_size, :tatizo)
+      .where(conditions.join(" OR "), bindings)
+      .distinct
+  }
+
+  IRREPARABLE_REASONS = [
+    "Repair error",
+    "Requires laser",
+    "Part unavailable",
+    "Glass cracked",
+    "Panel damaged",
+    "Other"
+  ].freeze
+
+  # ============================================================
+  # SPARE COST & GROSS PROFIT
+  # ============================================================
+  def spare_cost
+    if activity_spares.loaded?
+      activity_spares.sum { |item| item.total_cost.to_d }
+    else
+      activity_spares.sum(:total_cost).to_d
+    end
+  end
+
+  def gross_profit_value
+    price.to_d - labour_charge.to_d - spare_cost
+  end
+
+  def recalculate_gross_profit!
+    update_columns(
+      gross_profit: gross_profit_value,
+      updated_at: Time.current
+    )
+  end
+
+  def calculate_gross_profit
+    self.gross_profit = gross_profit_value
+  end
+
+  # ============================================================
+  # JOB NUMBER & INFO
+  # ============================================================
+  def job_number
+    brand = tv_brand&.name.presence || "TV"
+    size = tv_size&.size&.to_i
+
+    "#{brand}#{size}-#{created_at.strftime('%H%M')}-#{created_at.strftime('%d%b%y')}E#{id}"
+  end
+
+  def info
+    helpers = ApplicationController.helpers
+
+    helpers.safe_join([
+      helpers.content_tag(:span, "TN##{tcon_number}", class: "text-blue-600 font-semibold"),
+      " - ",
+      helpers.content_tag(:span, "P##{panel_number}", class: "text-green-600 font-semibold"),
+      " - ",
+      helpers.content_tag(:span, "C##{cof_number}", class: "text-orange-600 font-semibold")
+    ])
+  end
+
+  # ============================================================
+  # STATUS HELPERS
+  # ============================================================
+  def completed_or_delivered?
+    completed? || delivered?
+  end
+
+  def delivered_or_irreparable?
+    delivered? || irreparable?
+  end
+
+  # ============================================================
+  # MTTR — muda wa TV kukaa workshop hadi completed/delivered
+  # ============================================================
+  def mttr_seconds
+    return nil unless completed_or_delivered?
+    return nil unless date_in.present? && completed_at.present?
+
+    (completed_at - date_in)
+  end
+
+  def mttr_hours
+    return nil unless mttr_seconds
+    mttr_seconds / 1.hour
+  end
+
+  def mttr_days
+    return nil unless mttr_seconds
+    mttr_seconds / 1.day
+  end
+
+  def mttr_display
+    seconds = mttr_seconds
+    return "—" if seconds.nil? || seconds <= 0
+
+    format_duration(seconds)
+  end
+
+  # ============================================================
+  # DURATION — muda wa TV kukaa workshop (hadi delivered/irreparable)
+  # Inaendelea kuhesabiwa kama haijafika delivered/irreparable
+  # ============================================================
+  def duration_seconds
+    return nil unless date_in.present?
+
+    # Kama imefika delivered/irreparable, tumia delivered_at
+    # Kama haijafika, tumia Time.current
+    end_time = delivered_at.presence || Time.current
+
+    (end_time - date_in)
+  end
+
+  def duration_hours
+    return nil unless duration_seconds
+    duration_seconds / 1.hour
+  end
+
+  def duration_days
+    return nil unless duration_seconds
+    duration_seconds / 1.day
+  end
+
+  def duration_display
+    seconds = duration_seconds
+    return "—" if seconds.nil? || seconds <= 0
+
+    format_duration(seconds)
+  end
+
+  
+# COF usage and wastage calculations
+
+def main_cof_used
+   activity_spares
+    .joins(spare: :spare_category)
+    .where(spare_categories: { code: "MAINCOF" })
+    .sum(:quantity)
+end
+
+def side_cof_used
+   activity_spares
+    .joins(spare: :spare_category)
+    .where(spare_categories: { code: "SIDECOF" })
+    .sum(:quantity)
+end
+
+def main_cof_wastage_quantity
+  [main_cof_used - number_of_cof.to_i, 0].max
+end
+
+def side_cof_wastage_quantity
+  [side_cof_used - number_of_side_cof.to_i, 0].max
+end
+
+
+def cof_wastage_cost(category_code, required_quantity)
+  records = activity_spares
+    .joins(spare: :spare_category)
+    .where(spare_categories: { code: category_code })
+    .order(:id)
+
+  remaining_required = required_quantity.to_i
+
+  records.sum do |item|
+    used_quantity = item.quantity.to_i
+    normal_quantity = [used_quantity, remaining_required].min
+
+    remaining_required -= normal_quantity
+
+    damaged_quantity = used_quantity - normal_quantity
+
+    damaged_quantity * item.unit_cost.to_d
+  end
+end
+
+def main_cof_wastage_cost
+  cof_wastage_cost("MAINCOF", number_of_cof)
+end
+
+def side_cof_wastage_cost
+  cof_wastage_cost("SIDECOF", number_of_side_cof)
+end
+
+def total_cof_wastage_cost
+  main_cof_wastage_cost + side_cof_wastage_cost
+end
+
+ # ...
+
+  def expected_cof_count
+    (number_of_cof.to_i + number_of_side_cof.to_i)
+  end
+
+ 
+  def actual_cof_used_count
+    main_cof_used + side_cof_used
+  end
+
+  def cof_wastage_count
+    # [actual_cof_used_count - expected_cof_count, 0].max
+     main_cof_wastage_quantity + side_cof_wastage_quantity
+  end
+
+  def cof_wastage_value
+    # wasted_cofs = activity_spares
+    #   .joins(:spare)
+    #   .where("spares.name ILIKE ?", "%COF%")
+
+    # total_cost = wasted_cofs.sum("activity_spares.quantity * spares.unit_cost")
+    # total_qty  = wasted_cofs.sum(:quantity)
+
+    # return 0 if total_qty.zero?
+
+    # avg_unit_cost = total_cost / total_qty
+    # (cof_wastage_count * avg_unit_cost).to_d
+
+    total_cof_wastage_cost
+
+  end
+
+private
+
+def cof_usage_records(category_code, part_number)
+  return ActivitySpare.none if part_number.blank?
+
+  activity_spares
+    .joins(spare: :spare_category)
+    .where(
+      spares: { part_number: part_number },
+      spare_categories: { code: category_code }
+    )
+    .order(:id)
+end
+
+# def cof_wastage_cost(category_code, part_number, required_quantity)
+#   records = cof_usage_records(category_code, part_number)
+
+#   remaining_required = required_quantity.to_i
+
+#   records.sum do |item|
+#     used_quantity = item.quantity.to_i
+#     normal_quantity = [used_quantity, remaining_required].min
+
+#     remaining_required -= normal_quantity
+
+#     damaged_quantity = used_quantity - normal_quantity
+
+#     damaged_quantity * item.unit_cost.to_d
+#   end
+# end
+
+
+  # Helper moja ya format duration (inatumika kwa MTTR na Duration)
+  def format_duration(seconds)
+    total_minutes = (seconds / 60).round
+    total_hours   = total_minutes / 60
+    total_days    = total_hours / 24
+
+    days  = total_days
+    hours = total_hours % 24
+    mins  = total_minutes % 60
+
+    parts = []
+    parts << "#{days} #{days == 1 ? 'day' : 'days'}" if days.positive?
+    parts << "#{hours} #{hours == 1 ? 'hr' : 'hrs'}" if hours.positive?
+    parts << "#{mins} #{mins == 1 ? 'min' : 'mins'}" if mins.positive?
+
+    return "< 1 min" if parts.empty?
+    parts.join(" ")
+  end
+
+  def set_timestamps
+    # completed_at: kwa completed au delivered
+    if completed? || delivered?
+      self.completed_at ||= Time.current
+    else
+      self.completed_at = nil
+    end
+
+    # delivered_at: kwa delivered au irreparable
+    if delivered? || irreparable?
+      self.delivered_at ||= Time.current
+    else
+      self.delivered_at = nil
+    end
+  end
+
+  def must_have_at_least_one_cof_image
+    unless pattern_image.attached? || cof_image.attached?
+      errors.add(:base, "Tafadhali upload angalau picha moja ya Side COF au Main COF")
+    end
+  end
+end

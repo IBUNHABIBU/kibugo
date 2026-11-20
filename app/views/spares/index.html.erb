@@ -1,0 +1,138 @@
+<% content_for :title, "Spare Inventory" %>
+
+<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+
+  <!-- Page header -->
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Spare Inventory</h1>
+      <p class="mt-1 text-sm text-slate-500">Manage spare parts, stock levels and reorder points.</p>
+    </div>
+
+    <%= link_to new_spare_path,
+        class: "inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" do %>
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+      </svg>
+      Add Spare
+    <% end %>
+  </div>
+
+  <%# ============================================================
+      KPI CARDS
+      ============================================================ %>
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <!-- Total items -->
+    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Total items</p>
+        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+          </svg>
+        </div>
+      </div>
+      <p class="mt-3 text-2xl font-semibold tabular-nums text-slate-900"><%= @total_count %></p>
+      <p class="mt-1 text-xs text-slate-400">Across all categories</p>
+    </div>
+
+    <!-- Low stock -->
+    <div class="rounded-xl border p-5 shadow-sm <%= @low_stock_count.to_i.positive? ? 'border-rose-200 bg-rose-50/40' : 'border-slate-200 bg-white' %>">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-medium uppercase tracking-wider <%= @low_stock_count.to_i.positive? ? 'text-rose-700' : 'text-slate-500' %>">
+          Low stock
+        </p>
+        <div class="flex h-8 w-8 items-center justify-center rounded-lg <%= @low_stock_count.to_i.positive? ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-500' %>">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+          </svg>
+        </div>
+      </div>
+      <p class="mt-3 text-2xl font-semibold tabular-nums <%= @low_stock_count.to_i.positive? ? 'text-rose-700' : 'text-slate-900' %>">
+        <%= @low_stock_count %>
+      </p>
+      <p class="mt-1 text-xs <%= @low_stock_count.to_i.positive? ? 'text-rose-600' : 'text-slate-400' %>">
+        <%= @low_stock_count.to_i.positive? ? "Needs reordering" : "All levels healthy" %>
+      </p>
+    </div>
+
+    <!-- Inventory value -->
+    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Inventory value</p>
+        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
+        </div>
+      </div>
+      <p class="mt-3 text-2xl font-semibold tabular-nums text-slate-900">
+        <%= number_to_currency(@total_stock_value, unit: "TSh ", precision: 0) %>
+      </p>
+      <p class="mt-1 text-xs text-slate-400">Total cost of all spares</p>
+    </div>
+
+    <!-- Categories -->
+    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Categories</p>
+        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z" />
+          </svg>
+        </div>
+      </div>
+      <p class="mt-3 text-2xl font-semibold tabular-nums text-slate-900"><%= @category_count %></p>
+      <p class="mt-1 text-xs text-slate-400">Distinct categories</p>
+    </div>
+  </div>
+
+  <%# ============================================================
+      SEARCH BAR
+      ============================================================ %>
+  <%= form_with url: spares_path, method: :get,
+      data: {
+        controller: "search",
+        turbo_frame: "spares",
+        turbo_action: "advance",
+        action: "input->search#submit"
+      }, class: "rounded-xl border border-slate-200 bg-white p-3 shadow-sm" do |f| %>
+
+    <div class="flex items-center gap-2">
+      <div class="relative flex-1">
+        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+          <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+          </svg>
+        </div>
+
+        <%= f.search_field :q,
+            value: params[:q],
+            placeholder: "Search by name, part number, or category…",
+            autocomplete: "off",
+            class: "block w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 py-2 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" %>
+      </div>
+
+      <% if params[:q].present? %>
+        <%= link_to spares_path,
+            data: { turbo_frame: "spares", turbo_action: "advance" },
+            class: "inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50",
+            title: "Clear search" do %>
+          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+          Clear
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# ============================================================
+      TABLE / CARDS (Turbo Frame)
+      ============================================================ %>
+  <%= turbo_frame_tag "spares" do %>
+    <%= render "spares/list", spares: @spares, query: params[:q] %>
+  <% end %>
+</div>

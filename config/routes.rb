@@ -1,0 +1,39 @@
+Rails.application.routes.draw do
+  resources :tv_panels
+  resources :blogs
+  resources :spare_requests
+   resources :activity_versions,
+            controller: "activity_versions",
+            only: :index
+  get "pages/offline"
+  resources :tatizos
+  resources :tv_sizes
+  resources :tv_brands
+  resources :customers
+  resources :all_prices
+  resources :activities do
+    resources :repair_returns, except: :index
+    resources :spare_requests, only: %i[new create]
+  end
+  resources :spares do
+    resources :spare_purchases, only: %i[index new create]
+  end
+  resources :spare_categories, except: :show
+  resources :expenses
+
+  get "/dashboard", to: "dashboard#index", as: :dashboard
+
+  devise_for :users, path: "", path_names: {
+    sign_up: "adminregister",
+    sign_in: "login",
+    sign_out: "logout"
+  }
+
+  resources :users, only: %i[index update destroy]
+  get "up" => "rails/health#show", as: :rails_health_check
+  get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
+  get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
+  get "offline", to: "pages#offline"
+
+  root "home#index"
+end

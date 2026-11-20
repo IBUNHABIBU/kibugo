@@ -1,0 +1,9 @@
+class Expense < ApplicationRecord
+  belongs_to :user, optional: true
+
+  CATEGORIES = %w[bango spares electricity rent transport tools food salaries internet maintenance other shipping].freeze
+
+  validates :category, :description, :amount, :spent_on, presence: true
+  validates :category, inclusion: { in: CATEGORIES }
+  validates :amount, numericality: { greater_than_or_equal_to: 0 }
+end

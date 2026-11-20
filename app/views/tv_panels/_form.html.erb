@@ -1,0 +1,72 @@
+<%= form_with(model: tv_panel, class: "space-y-5") do |form| %>
+  <div class="grid gap-5 md:grid-cols-2">
+    <div>
+      <%= form.label :tv_brand_id, "Brand", class: "label" %>
+      <%= form.collection_select :tv_brand_id, @tv_brands, :id, :name, { prompt: "Chagua Brand" }, class: "field" %>
+    </div>
+    <div>
+      <%= form.label :tv_size_id, "Size", class: "label" %>
+      <%= form.collection_select :tv_size_id, @tv_sizes, :id, :size, { prompt: "Chagua Size" }, class: "field" %>
+    </div>
+    <div>
+      <%= form.label :customer_id, "Muuzaji (Supplier)", class: "label" %>
+      <%= form.collection_select :customer_id, @customers, :id, :name, { prompt: "Chagua Muuzaji" }, class: "field" %>
+    </div>
+    <div>
+      <%= form.label :status, "Hali", class: "label" %>
+      <%= form.select :status, TvPanel.statuses.keys.map { |s| [s.humanize, s] }, {}, class: "field" %>
+    </div>
+    <div>
+      <%= form.label :buy_price, "Bei ya Kununua (TSh)", class: "label" %>
+      <%= form.number_field :buy_price, step: 0.01, min: 0, class: "field" %>
+    </div>
+    <div>
+      <%= form.label :sell_price, "Bei ya Kuuza (TSh)", class: "label" %>
+      <%= form.number_field :sell_price, step: 0.01, min: 0, class: "field" %>
+    </div>
+  </div>
+
+    <!-- Remarks -->
+  <div>
+    <%= form.label :remarks, "Maelezo (Remarks)", class: "label" %>
+    <%= form.text_area :remarks, rows: 3, class: "field", placeholder: "Andika maelezo yoyote kuhusu bango hili..." %>
+  </div>
+
+  <!-- Picha -->
+  <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+    <h3 class="text-sm font-semibold text-slate-900 border-b border-slate-100 pb-2">Picha za Bango</h3>
+    
+    <div class="grid gap-5 md:grid-cols-2">
+      <!-- Picha ya Mbele -->
+      <div>
+        <%= form.label :front_image, "Picha ya Mbele (Front)", class: "label" %>
+        <%= form.file_field :front_image, accept: "image/*", class: "field" %>
+        
+        <!-- Onyesha picha kama ipo (kwa Edit) -->
+        <% if tv_panel.front_image.attached? %>
+          <div class="mt-2">
+            <%= image_tag tv_panel.front_image.variant(resize_to_limit: [150, 150]), class: "rounded-lg border object-cover h-24 w-24" %>
+          </div>
+        <% end %>
+      </div>
+
+      <!-- Picha ya Nyuma -->
+      <div>
+        <%= form.label :back_image, "Picha ya Nyuma (Back)", class: "label" %>
+        <%= form.file_field :back_image, accept: "image/*", class: "field" %>
+        
+        <!-- Onyesha picha kama ipo (kwa Edit) -->
+        <% if tv_panel.back_image.attached? %>
+          <div class="mt-2">
+            <%= image_tag tv_panel.back_image.variant(resize_to_limit: [150, 150]), class: "rounded-lg border object-cover h-24 w-24" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="flex justify-end pt-4">
+    <%= form.submit "Hifadhi Bango", class: "rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white cursor-pointer" %>
+  </div>
+<% end %>

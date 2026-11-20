@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= full_title(yield(:title)) %></title>
+    <meta name="description" content="Veefix bonging
+">
+    <meta name="robots" content="index, follow">
+
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <meta property="og:title" content="<%= yield(:title) || "Ninja" %>">
+    <meta property="og:description" content="<%= yield(:description) || "Best tv repair" %>">
+    <meta property="og:image" content="<%= image_url("favicon-32x32.png") %>">
+    <meta property="og:url" content="<%= request.original_url %>">
+    <meta property="og:type" content="website">
+
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= favicon_link_tag "favicon-32x32.png" %>
+
+    <%= yield :head %>
+
+    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
+   <%= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
+    <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <%# Includes all stylesheet files in app/assets/stylesheets %>
+
+  <!-- Tom Select JS + CSS -->
+  <script src="https://cdn.jsdelivr.net/npm/tom-select@2.6.2/dist/js/tom-select.complete.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tom-select@2.6.2/dist/css/tom-select.css" rel="stylesheet">
+  
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+
+        
+      <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+      <!-- Chartkick -->
+      <script src="https://cdn.jsdelivr.net/npm/chartkick@5.0.1/dist/chartkick.min.js"></script>
+      
+    <%= javascript_importmap_tags %>
+    <%= javascript_include_tag "https://www.gstatic.com/charts/loader.js" %>
+    <script>
+        if ("serviceWorker" in navigator) {
+          window.addEventListener("load", () => {
+            navigator.serviceWorker.register("/service-worker.js")
+              .then((registration) => {
+                console.log("Service Worker registered:", registration.scope);
+              })
+              .catch((error) => {
+                console.error("Service Worker registration failed:", error);
+              });
+          });
+        }
+    </script>
+  </head>
+
+  <body class="min-h-screen bg-neutral-light" data-turbo-cache="false">
+
+    <%= render "shared/navigation" %>
+    
+    <%= turbo_frame_tag "flash" do %>
+      <%= render "shared/flash_messages" %>
+    <% end %>
+    
+    <main class="container mx-auto px-4 py-8">
+      <%= yield %>
+    </main>
+
+    <%= render "shared/footer" %>
+  </body>
+</html>
