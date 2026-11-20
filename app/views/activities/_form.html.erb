@@ -1,0 +1,74 @@
+<%= form_with(model: activity, class: "space-y-8", data: { controller: "spares-form" }) do |form| %>
+  <% if activity.errors.any? %>
+    <div class="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+      <h2 class="font-semibold"><%= pluralize(activity.errors.count, "error") %> prevented this activity from being saved.</h2>
+      <ul class="mt-2 list-disc pl-5 text-sm">
+          <% activity.errors.full_messages.each do |message| %>
+             <li><%= message %></li>
+          <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <section class="rounded-xl border bg-white p-6 shadow-sm">
+    <h2 class="mb-5 text-lg font-semibold">Customer & TV</h2>
+    <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+      <div><%= form.label :customer_id, "Customer", class: "label" %><%= form.collection_select :customer_id, @customers, :id, :name, { prompt: "Select customer" }, class: "field" %></div>
+      <div><%= form.label :tv_brand_id, "TV Brand", class: "label" %><%= form.collection_select :tv_brand_id, @tv_brands, :id, :name, { prompt: "Select brand" }, class: "field" %></div>
+      <div><%= form.label :tv_size_id, "TV Size", class: "label" %><%= form.collection_select :tv_size_id, @tv_sizes, :id, :size, { prompt: "Select size" }, class: "field" %></div>
+      <div><%= form.label :tatizo_id, "Problem", class: "label" %><%= form.collection_select :tatizo_id, @tatizos, :id, :name, { prompt: "Select problem" }, class: "field" %></div>
+       <div><%= form.label :model_no, "Model number", class: "label" %><%= form.text_field :model_no, autocomplete: "off", class: "field" %></div>
+      <div><%= form.label :date_in, class: "label" %><%= form.datetime_local_field :date_in, value: form.object.date_in&.strftime("%Y-%m-%dT%H:%M"), class: "field" %></div>
+      <div><%= form.label :date_out, class: "label" %><%= form.datetime_local_field :date_out, value: form.object.date_in&.strftime("%Y-%m-%dT%H:%M"), class: "field" %></div>
+      <div><%= form.label :status, class: "label" %><%= form.select :status, Activity.statuses.keys.map { |s| [ s.humanize, s ] }, {}, class: "field" %></div>
+    </div>
+  </section>
+
+  <section class="rounded-xl border bg-white p-6 shadow-sm">
+    <h2 class="mb-5 text-lg font-semibold">Price & Labour</h2>
+    <div class="grid gap-5 md:grid-cols-3">
+      <div><%= form.label :price, "Price (TSh)", class: "label" %><%= form.number_field :price, step: 0.01, min: 0, class: "field" %></div>
+      <div><%= form.label :labour_charge, "Labour charge (TSh)", class: "label" %><%= form.number_field :labour_charge, step: 0.01, min: 0, class: "field" %></div>
+      <div class="rounded-lg bg-slate-50 p-3 text-sm text-slate-600">Gross profit is calculated as <strong>Price − Labour − Spare cost</strong>.</div>
+    </div>
+  </section>
+
+  <section class="rounded-xl border bg-white p-6 shadow-sm">
+    <div class="mb-4 flex items-center justify-between">
+      <div><h2 class="text-lg font-semibold">Spares used</h2><p class="text-sm text-slate-500">Select stock items and quantity. Stock is deducted automatically.</p></div>
+      <button type="button" data-action="spares-form#add" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white">+ Add spare</button>
+    </div>
+    <div data-spares-form-target="rows" class="space-y-3">
+      <% activity.activity_spares.each do |item| %>
+        <div data-spare-row class="grid gap-3 rounded-lg border p-3 md:grid-cols-[1fr_160px_auto]">
+          <%= select_tag "spare_ids[]", options_from_collection_for_select(@spares, :id, ->(s) { "#{s.name} (#{s.spare_category.name}) — stock #{s.quantity}" }, item.spare_id), include_blank: "Select spare", class: "field" %>
+          <%= number_field_tag "spare_quantities[]", item.quantity, autocomplete: "off", min: 1, class: "field" %>
+          <button type="button" data-action="spares-form#remove" class="rounded-lg border px-3 py-2 text-sm">Remove</button>
+        </div>
+      <% end %>
+    </div>
+    <template data-spares-form-target="template">
+      <div data-spare-row class="grid gap-3 rounded-lg border p-3 md:grid-cols-[1fr_160px_auto]">
+        <%= select_tag "spare_ids[]", options_from_collection_for_select(@spares, :id, ->(s) { "#{s.name} (#{s.spare_category.name}) — stock #{s.quantity}" }), include_blank: "Select spare", class: "field" %>
+        <%= number_field_tag "spare_quantities[]", 1, autocomplete: "off", min: 1, class: "field" %>
+        <button type="button" data-action="spares-form#remove" class="rounded-lg border px-3 py-2 text-sm">Remove</button>
+      </div>
+    </template>
+  </section>
+
+  <section class="rounded-xl border bg-white p-6 shadow-sm">
+    <%= form.label :remarks, class: "label" %>
+    <%= form.text_area :remarks, rows: 4, class: "field" %>
+  </section>
+
+  <section class="rounded-xl border bg-white p-6 shadow-sm">
+    <h2 class="mb-5 text-lg font-semibold">Photos</h2>
+    <div class="grid gap-5 md:grid-cols-2">
+      <% [ [ :pattern_image, "COF Pattern" ], [ :model_image, "Model Number" ], [ :board_number, "Board Number" ], [ :tcon_number, "T-Con Number" ], [ :cof_number, "COF Number" ], [ :panel_number, "Panel Number" ], [ :image_before, "Before" ], [ :image_after, "After" ] ].each do |field, label| %>
+        <div><%= form.label field, label, class: "label" %><%= form.file_field field, accept: "image/*", capture: "environment", class: "field" %></div>
+      <% end %>
+    </div>
+  </section>
+
+  <div class="flex gap-3"><%= form.submit class: "rounded-lg bg-blue-600 px-5 py-2.5 font-medium text-white hover:bg-blue-700" %><%= link_to "Cancel", activities_path, class: "rounded-lg border px-5 py-2.5" %></div>
+<% end %>
