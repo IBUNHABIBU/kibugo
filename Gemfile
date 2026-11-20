@@ -87,7 +87,7 @@ gem "active_storage_validations", "~> 3.0"
 
 gem 'listen'
 
-gem "groupdate", "~> 6.7"
+gem "groupdate", "~> 6.8"
 
 gem "chartkick", "~> 5.2"
 
